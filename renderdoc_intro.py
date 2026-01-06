@@ -4,50 +4,57 @@ import sys
 from pathlib import Path
 import renderdoc as rd
 
+def loadCapture(filename):
+    # Open a capture file handle
+    cap = rd.OpenCaptureFile()
 
-if len(sys.argv) > 1:
-    file_path = sys.argv[1]
+    # Open a particular file - see also OpenBuffer to load from memory
+    result = cap.OpenFile(filename, '', None)
+
+    # Make sure the file opened successfully
+    if result != rd.ResultCode.Succeeded:
+        raise RuntimeError("Couldn't open file: " + str(result))
+
+    # Make sure we can replay
+    if not cap.LocalReplaySupport():
+        raise RuntimeError("Capture cannot be replayed")
+
+    # Initialise the replay
+    result,controller = cap.OpenCapture(rd.ReplayOptions(), None)
+
+    if result != rd.ResultCode.Succeeded:
+        raise RuntimeError("Couldn't initialise replay: " + str(result))
+
+    return cap,controller
+
+#------------------------
+#  main
+#------------------------
+if 'pyrenderdoc' in globals():
+    pyrenderdoc.Replay().BlockInvoke(sampleCode)
 else:
-    print(f"Usage: {Path(sys.argv[0]).name} *.rdc")
-    sys.exit(1)
+    rd.InitialiseReplay(rd.GlobalEnvironment(), [])
 
-rd.InitialiseReplay(rd.GlobalEnvironment(), [])
+    if len(sys.argv) <= 1:
+        print('Usage: python3 {} filename.rdc'.format(sys.argv[0]))
+        sys.exit(0)
 
-# Open a capture file handle
-cap = rd.OpenCaptureFile()
+    cap,controller = loadCapture(sys.argv[1])
 
-# Open a particular file - see also OpenBuffer to load from memory
-result = cap.OpenFile(file_path, '', None)
+    # Now we can use the controller!
+    print("%d top-level actions" % len(controller.GetRootActions()))
+    print("\n%d resourcs" % len(controller.GetResources()))
 
-# Make sure the file opened successfully
-if result != rd.ResultCode.Succeeded:
-    raise RuntimeError("Couldn't open file: " + str(result))
+    print("\nGetResources:")
+    for res in controller.GetResources():
+        print( f"{res.resourceId}, {res.name}, {res.type.name}" )
 
-# Make sure we can replay
-if not cap.LocalReplaySupport():
-    raise RuntimeError("Capture cannot be replayed")
+    print("\nShader Modules:")
+    for res in controller.GetResources():
+        if( res.type == rd.ResourceType.Shader ):
+            print( f"{res.name}, {res.type.name}, parent {res.parentResources}, derived {res.derivedResources}" )
 
-# Initialise the replay
-result,controller = cap.OpenCapture(rd.ReplayOptions(), None)
+    controller.Shutdown()
+    cap.Shutdown()
 
-if result != rd.ResultCode.Succeeded:
-    raise RuntimeError("Couldn't initialise replay: " + str(result))
-
-# Now we can use the controller!
-print("%d top-level actions" % len(controller.GetRootActions()))
-print("\n%d resourcs" % len(controller.GetResources()))
-
-print("\nGetResources:")
-for res in controller.GetResources():
-    print( f"{res.resourceId}, {res.name}, {res.type.name}" )
-
-print("\nShader Modules:")
-for res in controller.GetResources():
-    if( res.type == rd.ResourceType.Shader ):
-        print( f"{res.name}, {res.type.name}, parent {res.parentResources}, derived {res.derivedResources}" )
-
-controller.Shutdown()
-
-cap.Shutdown()
-
-rd.ShutdownReplay()
+    rd.ShutdownReplay()
