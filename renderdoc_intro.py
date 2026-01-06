@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 import renderdoc as rd
 
+
 if len(sys.argv) > 1:
     file_path = sys.argv[1]
 else:
@@ -34,6 +35,16 @@ if result != rd.ResultCode.Succeeded:
 
 # Now we can use the controller!
 print("%d top-level actions" % len(controller.GetRootActions()))
+print("\n%d resourcs" % len(controller.GetResources()))
+
+print("\nGetResources:")
+for res in controller.GetResources():
+    print( f"{res.resourceId}, {res.name}, {res.type.name}" )
+
+print("\nShader Modules:")
+for res in controller.GetResources():
+    if( res.type == rd.ResourceType.Shader ):
+        print( f"{res.name}, {res.type.name}, parent {res.parentResources}, derived {res.derivedResources}" )
 
 controller.Shutdown()
 
