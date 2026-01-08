@@ -52,7 +52,10 @@ else:
     print("\nShader Modules:")
     for res in controller.GetResources():
         if( res.type == rd.ResourceType.Shader ):
-            print( f"{res.name}, {res.type.name}, parent {res.parentResources}, derived {res.derivedResources}" )
+            shaderRefl = controller.GetShader( res.derivedResources[0], res.resourceId, controller.GetShaderEntryPoints(res.resourceId)[0] )
+            print('%s, %s, parent %s, derived %s, %s <- %s <- %s, %s' %
+                  (res.name, res.type.name, res.parentResources, res.derivedResources,
+                   shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
 
     controller.Shutdown()
     cap.Shutdown()
