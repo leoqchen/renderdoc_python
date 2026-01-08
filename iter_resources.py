@@ -42,20 +42,22 @@ else:
     cap,controller = loadCapture(sys.argv[1])
 
     # Now we can use the controller!
-    print("%d top-level actions" % len(controller.GetRootActions()))
-    print("\n%d resourcs" % len(controller.GetResources()))
+    print("GetRootActions: %d top-level actions" % len(controller.GetRootActions()))
 
-    print("\nGetResources:")
+    print("\nGetResources: %d resources" % len(controller.GetResources()))
     for res in controller.GetResources():
         print( f"{res.resourceId}, {res.name}, {res.type.name}" )
 
+    shaderModule_count = 0
     print("\nShader Modules:")
     for res in controller.GetResources():
         if( res.type == rd.ResourceType.Shader ):
+            shaderModule_count += 1
             shaderRefl = controller.GetShader( res.derivedResources[0], res.resourceId, controller.GetShaderEntryPoints(res.resourceId)[0] )
             print('%s, %s, parent %s, derived %s, %s <- %s <- %s, %s' %
                   (res.name, res.type.name, res.parentResources, res.derivedResources,
                    shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+    print("Shader Modules count: %d" % shaderModule_count)
 
     controller.Shutdown()
     cap.Shutdown()

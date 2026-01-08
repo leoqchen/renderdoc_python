@@ -30,7 +30,7 @@ def sampleCode(controller):
 			action_is_draw_or_dispatch = True
 
 		if action_is_draw_or_dispatch:
-			controller.SetFrameEvent(action.eventId,False)
+			controller.SetFrameEvent(action.eventId,False) # very slow
 			pipeState = controller.GetPipelineState()
 
 			vertexShader = pipeState.GetShader(rd.ShaderStage.Vertex)
