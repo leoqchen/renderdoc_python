@@ -26,6 +26,19 @@ def loadCapture(filename):
 
     return cap,controller
 
+def shaderStageShortname( stage ) -> str:
+    if stage == rd.ShaderStage.Vertex:
+        return "vert"
+    elif stage == rd.ShaderStage.Geometry:
+        return "geom"
+    elif stage == rd.ShaderStage.Fragment:
+        return "frag"
+    elif stage == rd.ShaderStage.Compute:
+        return "comp"
+    else:
+        return stage.name
+
+
 #------------------------
 #  main
 #------------------------
@@ -74,10 +87,10 @@ else:
 
                 disasm = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target)
 
-                stageName = "Fragment" if shaderRefl.stage == rd.ShaderStage.Fragment else shaderRefl.stage.name
+                stageName = shaderStageShortname( shaderRefl.stage )
                 fileDir = "%s/pseudocode/%s" % (outputDir, stageName)
                 os.makedirs(fileDir, exist_ok=True)
-                file = open( "%s/shader_%d.txt" % (fileDir, res.resourceId), "w")
+                file = open( "%s/shader_%d.%s" % (fileDir, res.resourceId, stageName), "w")
                 file.write( disasm )
                 file.close()
 
@@ -95,10 +108,10 @@ else:
 
                 glslCode = shaderRefl.debugInfo.files[0].contents
 
-                stageName = "Fragment" if shaderRefl.stage == rd.ShaderStage.Fragment else shaderRefl.stage.name
+                stageName = shaderStageShortname( shaderRefl.stage )
                 fileDir = "%s/glsl/%s" % (outputDir, stageName )
                 os.makedirs(fileDir, exist_ok=True)
-                file = open( "%s/shader_%d.txt" % (fileDir, res.resourceId), "w")
+                file = open( "%s/shader_%d.%s" % (fileDir, res.resourceId, stageName), "w")
                 file.write( glslCode )
                 file.close()
 
