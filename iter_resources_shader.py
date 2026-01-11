@@ -93,15 +93,25 @@ else:
                        shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
                 stageName = shaderStageShortname( shaderRefl.stage )
 
-                disasm = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target)
-                fileDir = "%s/spv_pseudocode/%s" % (outputDir, stageName)
-                filename = "shader_%d.%s" % (res.resourceId, stageName )
-                file_write( fileDir, filename, "w", disasm )
+                pseudoCode = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target)
+                pseudoDir = "%s/spv_pseudocode/%s" % (outputDir, stageName)
+                pseudoFile = "shader_%d.%s" % (res.resourceId, stageName )
+                file_write( pseudoDir, pseudoFile, "w", pseudoCode )
 
                 spvBin = shaderRefl.rawBytes
-                fileDir = "%s/spv/%s" % (outputDir, stageName)
-                filename = "shader_%d.spv" % (res.resourceId)
-                file_write( fileDir, filename, "wb", spvBin )
+                spvDir = "%s/spv/%s" % (outputDir, stageName)
+                spvFile = "shader_%d.spv" % (res.resourceId)
+                file_write( spvDir, spvFile, "wb", spvBin )
+
+                glslDir = "%s/glsl/%s" % (outputDir, stageName)
+                glslFile = "shader_%d.%s" % (res.resourceId, stageName)
+                os.makedirs( glslDir, exist_ok=True )
+                os.system( "spirv-cross --vulkan-semantics --stage %s --output %s/%s %s/%s" % (stageName, glslDir, glslFile, spvDir, spvFile))
+
+                spvasmDir = "%s/spvasm/%s" % (outputDir, stageName)
+                spvasmFile = "shader_%d.spvasm" % (res.resourceId)
+                os.makedirs( spvasmDir, exist_ok=True )
+                os.system( "spirv-dis -o %s/%s %s/%s" % (spvasmDir, spvasmFile, spvDir, spvFile))
 
     elif( API.pipelineType == rd.GraphicsAPI.OpenGL ):
         outputDir += "OpenGL"
@@ -117,9 +127,9 @@ else:
                 stageName = shaderStageShortname( shaderRefl.stage )
 
                 glslCode = shaderRefl.debugInfo.files[0].contents
-                fileDir = "%s/glsl/%s" % (outputDir, stageName )
-                filename = "shader_%d.%s" % (res.resourceId, stageName )
-                file_write( fileDir, filename, "w", glslCode )
+                glslDir = "%s/glsl/%s" % (outputDir, stageName )
+                glslFile = "shader_%d.%s" % (res.resourceId, stageName )
+                file_write( glslDir, glslFile, "w", glslCode )
 
 
     print("Shader Modules count: %d" % shaderModule_count)
