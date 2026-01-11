@@ -54,8 +54,7 @@ else:
     target = targets[0]
 
     shaderModule_count = 0
-    shaderDir = "shader"
-    os.makedirs(shaderDir, exist_ok=True)
+    outputDir = "shader"
 
     print("\nShader Modules:")
     for res in controller.GetResources():
@@ -66,8 +65,11 @@ else:
                   (res.name, res.type.name, res.parentResources, res.derivedResources,
                    shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
 
-            disasm = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target);
-            file = open( "%s/shader_%d.txt" % (shaderDir, res.resourceId), "w")
+            disasm = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target)
+
+            fileDir = "%s/pseudocode/%s" % (outputDir, shaderRefl.stage.name)
+            os.makedirs(fileDir, exist_ok=True)
+            file = open( "%s/shader_%d.txt" % (fileDir, res.resourceId), "w")
             file.write(disasm)
             file.close()
     print("Shader Modules count: %d" % shaderModule_count)
