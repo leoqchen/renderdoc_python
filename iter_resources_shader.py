@@ -36,42 +36,73 @@ else:
 
     if len(sys.argv) <= 1:
         print('Usage: python3 {} filename.rdc'.format(sys.argv[0]))
-        sys.exit(0)
+        sys.exit(1)
 
     cap,controller = loadCapture(sys.argv[1])
 
     # Now we can use the controller!
+    API = controller.GetAPIProperties()
+    print("GetAPIProperties: %s" % API.pipelineType.name)
+
     print("GetRootActions: %d top-level actions" % len(controller.GetRootActions()))
 
     print("\nGetResources: %d resources" % len(controller.GetResources()))
     for res in controller.GetResources():
         print( f"{res.resourceId}, {res.name}, {res.type.name}" )
 
-    print("\nDisassembly Targets:")
-    targets = controller.GetDisassemblyTargets(True)
-    for disasm in targets:
-        print("  - " + disasm)
-    target = targets[0]
-
     shaderModule_count = 0
     outputDir = "shader"
 
     print("\nShader Modules:")
-    for res in controller.GetResources():
-        if( res.type == rd.ResourceType.Shader ):
-            shaderModule_count += 1
-            shaderRefl = controller.GetShader( res.derivedResources[0], res.resourceId, controller.GetShaderEntryPoints(res.resourceId)[0] )
-            print('%s, %s, parent %s, derived %s, %s <- %s <- %s, %s' %
-                  (res.name, res.type.name, res.parentResources, res.derivedResources,
-                   shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+    if (API.pipelineType == rd.GraphicsAPI.Vulkan):
+        outputDir += "Vulkan"
 
-            disasm = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target)
+        print("\nDisassembly Targets:")
+        targets = controller.GetDisassemblyTargets(True)
+        for disasm in targets:
+            print("  - " + disasm)
+        target = targets[0]
 
-            fileDir = "%s/pseudocode/%s" % (outputDir, shaderRefl.stage.name)
-            os.makedirs(fileDir, exist_ok=True)
-            file = open( "%s/shader_%d.txt" % (fileDir, res.resourceId), "w")
-            file.write(disasm)
-            file.close()
+        for res in controller.GetResources():
+            if( res.type == rd.ResourceType.Shader ):
+                shaderModule_count += 1
+
+                shaderRefl = controller.GetShader( res.derivedResources[0], res.resourceId, controller.GetShaderEntryPoints(res.resourceId)[0] )
+                print('%s, %s, parent %s, derived %s, %s <- %s <- %s, %s' %
+                      (res.name, res.type.name, res.parentResources, res.derivedResources,
+                       shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+
+                disasm = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target)
+
+                stageName = "Fragment" if shaderRefl.stage == rd.ShaderStage.Fragment else shaderRefl.stage.name
+                fileDir = "%s/pseudocode/%s" % (outputDir, stageName)
+                os.makedirs(fileDir, exist_ok=True)
+                file = open( "%s/shader_%d.txt" % (fileDir, res.resourceId), "w")
+                file.write( disasm )
+                file.close()
+
+    elif( API.pipelineType == rd.GraphicsAPI.OpenGL ):
+        outputDir += "OpenGL"
+
+        for res in controller.GetResources():
+            if( res.type == rd.ResourceType.Shader ):
+                shaderModule_count += 1
+
+                shaderRefl = controller.GetShader( res.parentResources[0], res.resourceId, rd.ShaderEntryPoint( "main", rd.ShaderStage.Vertex  ) )
+                print('%s, %s, parent %s, %s <- %s <- %s, %s' %
+                      (res.name, res.type.name, res.parentResources,
+                       shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+
+                glslCode = shaderRefl.debugInfo.files[0].contents
+
+                stageName = "Fragment" if shaderRefl.stage == rd.ShaderStage.Fragment else shaderRefl.stage.name
+                fileDir = "%s/glsl/%s" % (outputDir, stageName )
+                os.makedirs(fileDir, exist_ok=True)
+                file = open( "%s/shader_%d.txt" % (fileDir, res.resourceId), "w")
+                file.write( glslCode )
+                file.close()
+
+
     print("Shader Modules count: %d" % shaderModule_count)
 
     controller.Shutdown()

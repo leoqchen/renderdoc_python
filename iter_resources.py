@@ -37,11 +37,14 @@ else:
 
     if len(sys.argv) <= 1:
         print('Usage: python3 {} filename.rdc'.format(sys.argv[0]))
-        sys.exit(0)
+        sys.exit(1)
 
     cap,controller = loadCapture(sys.argv[1])
 
     # Now we can use the controller!
+    API = controller.GetAPIProperties()
+    print("GetAPIProperties: %s" % API.pipelineType.name)
+
     print("GetRootActions: %d top-level actions" % len(controller.GetRootActions()))
 
     print("\nGetResources: %d resources" % len(controller.GetResources()))
@@ -53,10 +56,17 @@ else:
     for res in controller.GetResources():
         if( res.type == rd.ResourceType.Shader ):
             shaderModule_count += 1
-            shaderRefl = controller.GetShader( res.derivedResources[0], res.resourceId, controller.GetShaderEntryPoints(res.resourceId)[0] )
-            print('%s, %s, parent %s, derived %s, %s <- %s <- %s, %s' %
-                  (res.name, res.type.name, res.parentResources, res.derivedResources,
-                   shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+
+            if( API.pipelineType == rd.GraphicsAPI.Vulkan ):
+                shaderRefl = controller.GetShader( res.derivedResources[0], res.resourceId, controller.GetShaderEntryPoints(res.resourceId)[0] )
+                print('%s, %s, parent %s, derived %s, %s <- %s <- %s, %s' %
+                      (res.name, res.type.name, res.parentResources, res.derivedResources,
+                       shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+            elif( API.pipelineType == rd.GraphicsAPI.OpenGL ):
+                shaderRefl = controller.GetShader( res.parentResources[0], res.resourceId, rd.ShaderEntryPoint( "main", rd.ShaderStage.Vertex  ) )
+                print('%s, %s, parent %s, %s <- %s <- %s, %s' %
+                      (res.name, res.type.name, res.parentResources, shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+
     print("Shader Modules count: %d" % shaderModule_count)
 
     controller.Shutdown()
