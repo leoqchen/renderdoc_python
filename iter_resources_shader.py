@@ -91,13 +91,17 @@ else:
                 print('%s, %s, parent %s, derived %s, %s <- %s <- %s, %s' %
                       (res.name, res.type.name, res.parentResources, res.derivedResources,
                        shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+                stageName = shaderStageShortname( shaderRefl.stage )
 
                 disasm = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target)
-
-                stageName = shaderStageShortname( shaderRefl.stage )
                 fileDir = "%s/spv_pseudocode/%s" % (outputDir, stageName)
                 filename = "shader_%d.%s" % (res.resourceId, stageName )
                 file_write( fileDir, filename, "w", disasm )
+
+                spvBin = shaderRefl.rawBytes
+                fileDir = "%s/spv/%s" % (outputDir, stageName)
+                filename = "shader_%d.spv" % (res.resourceId)
+                file_write( fileDir, filename, "wb", spvBin )
 
     elif( API.pipelineType == rd.GraphicsAPI.OpenGL ):
         outputDir += "OpenGL"
@@ -110,10 +114,9 @@ else:
                 print('%s, %s, parent %s, %s <- %s <- %s, %s' %
                       (res.name, res.type.name, res.parentResources,
                        shaderRefl.encoding.name, shaderRefl.debugInfo.compiler.name, shaderRefl.debugInfo.encoding.name, shaderRefl.stage.name))
+                stageName = shaderStageShortname( shaderRefl.stage )
 
                 glslCode = shaderRefl.debugInfo.files[0].contents
-
-                stageName = shaderStageShortname( shaderRefl.stage )
                 fileDir = "%s/glsl/%s" % (outputDir, stageName )
                 filename = "shader_%d.%s" % (res.resourceId, stageName )
                 file_write( fileDir, filename, "w", glslCode )
