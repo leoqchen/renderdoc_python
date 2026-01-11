@@ -26,7 +26,7 @@ def loadCapture(filename):
 
     return cap,controller
 
-def shaderStageShortname( stage ) -> str:
+def shaderStageShortname( stage: rd.ShaderStage ) -> str:
     if stage == rd.ShaderStage.Vertex:
         return "vert"
     elif stage == rd.ShaderStage.Geometry:
@@ -37,6 +37,13 @@ def shaderStageShortname( stage ) -> str:
         return "comp"
     else:
         return stage.name
+
+def file_write( dir: str, filename: str, mode: str, content ) -> None:
+    os.makedirs( dir, exist_ok=True )
+
+    file = open( "%s/%s" % (dir, filename), mode )
+    file.write( content )
+    file.close()
 
 
 #------------------------
@@ -88,11 +95,9 @@ else:
                 disasm = controller.DisassembleShader(res.derivedResources[0], shaderRefl, target)
 
                 stageName = shaderStageShortname( shaderRefl.stage )
-                fileDir = "%s/pseudocode/%s" % (outputDir, stageName)
-                os.makedirs(fileDir, exist_ok=True)
-                file = open( "%s/shader_%d.%s" % (fileDir, res.resourceId, stageName), "w")
-                file.write( disasm )
-                file.close()
+                fileDir = "%s/spv_pseudocode/%s" % (outputDir, stageName)
+                filename = "shader_%d.%s" % (res.resourceId, stageName )
+                file_write( fileDir, filename, "w", disasm )
 
     elif( API.pipelineType == rd.GraphicsAPI.OpenGL ):
         outputDir += "OpenGL"
@@ -110,10 +115,8 @@ else:
 
                 stageName = shaderStageShortname( shaderRefl.stage )
                 fileDir = "%s/glsl/%s" % (outputDir, stageName )
-                os.makedirs(fileDir, exist_ok=True)
-                file = open( "%s/shader_%d.%s" % (fileDir, res.resourceId, stageName), "w")
-                file.write( glslCode )
-                file.close()
+                filename = "shader_%d.%s" % (res.resourceId, stageName )
+                file_write( fileDir, filename, "w", glslCode )
 
 
     print("Shader Modules count: %d" % shaderModule_count)
